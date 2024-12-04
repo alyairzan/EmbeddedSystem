@@ -12,6 +12,9 @@ const int relayPin = 7;  // Pin untuk mengontrol relay/pompa
 const int redLEDPin = 8;   // Pin untuk LED merah
 const int greenLEDPin = 9; // Pin untuk LED hijau
 
+// Pin untuk LED hijau indikator pompa
+const int pumpIndicatorPin = 2; // Pin untuk LED hijau indikator pompa (pompa hidup/mati)
+
 // Variabel untuk menyimpan hasil pembacaan
 long duration;
 int distance;
@@ -20,8 +23,8 @@ int numReadings = 10;   // Jumlah pembacaan untuk rata-rata
 int averageMoisture = 0; // Menyimpan nilai rata-rata kelembaban
 
 // Batasan ketinggian air dan kelembaban
-const int minWaterHeight = 20;  // Ketinggian air minimal (cm)
-const int maxMoisture = 55;     // Kelembaban tanah maksimal (%) untuk aktifkan pompa
+const int minWaterHeight = 15;  // Ketinggian air minimal (cm)
+const int maxMoisture = 75;     // Kelembaban tanah maksimal (%) untuk aktifkan pompa
 
 void setup() {
   // Inisialisasi pin untuk sensor ultrasonik
@@ -35,6 +38,11 @@ void setup() {
   // Inisialisasi pin untuk LED RGB
   pinMode(redLEDPin, OUTPUT);
   pinMode(greenLEDPin, OUTPUT);
+
+  // Inisialisasi pin untuk LED hijau indikator pompa
+  pinMode(pumpIndicatorPin, OUTPUT);  // Menetapkan pin LED hijau sebagai output
+
+  digitalWrite(pumpIndicatorPin, LOW);  // Memastikan LED indikator mati
 
   // Awalnya nyalakan LED merah sebagai state awal
   setColor(255, 0, 0);  // Merah
@@ -68,7 +76,7 @@ void loop() {
 
   for (int i = 0; i < numReadings; i++) {
     averageMoisture += analogRead(moisturePin); // Menambahkan hasil pembacaan
-    delay(100); // Mengurangi delay menjadi 100ms untuk mempercepat rata-rata
+    delay(0); // Mengurangi delay menjadi 100ms untuk mempercepat rata-rata
   }
 
   // Menyelesaikan rata-rata pembacaan kelembaban
@@ -100,18 +108,31 @@ void loop() {
   // Mengaktifkan relay/pompa berdasarkan kondisi yang diinginkan
   if (distance < minWaterHeight && moisturePercent < maxMoisture) {  // Kondisi dibalik
     digitalWrite(relayPin, LOW);   // Pompa hidup
+    setPumpIndicatorColor(HIGH);  // LED hijau indikator pompa hidup
     Serial.println("Pompa ON - Air cukup dan Tanah kering");
   } else {
     digitalWrite(relayPin, HIGH);    // Pompa mati
+    setPumpIndicatorColor(LOW);   // LED hijau indikator pompa mati
     Serial.println("Pompa OFF - Tidak memenuhi kondisi");
   }
 
   // Jeda pembacaan selama 1 detik sebelum pembacaan ulang
-  delay(1000);
+  delay(1000);  // Memberikan waktu jeda 1 detik untuk pembacaan berikutnya
 }
 
 // Fungsi untuk mengatur warna LED RGB
 void setColor(int red, int green, int blue) {
   analogWrite(redLEDPin, red);
   analogWrite(greenLEDPin, green);
+}
+
+// Fungsi untuk mengatur LED indikator pompa (pumpIndicator)
+void setPumpIndicatorColor(int state) {
+  if (state == HIGH) {
+    // Nyalakan LED hijau indikator pompa
+    analogWrite(pumpIndicatorPin, 255);  // LED hijau (pompa hidup)
+  } else {
+    // Matikan LED hijau indikator pompa
+    analogWrite(pumpIndicatorPin, 0);  // LED mati (pompa mati)
+  }
 }
